@@ -37,7 +37,7 @@ public class DistributedDimensions extends JavaPlugin {
         dimensionSwitchService = switchService;
         snapshotService = switchService;
 
-        DimensionSwitchListener dimSwitchListener = new DimensionSwitchListener(this, positionStore, dimensionSwitchService);
+        DimensionSwitchListener dimSwitchListener = new DimensionSwitchListener(this, positionStore);
         getServer().getMessenger().registerOutgoingPluginChannel(this, Channels.DIM_SWITCH.toString());
         getServer().getMessenger().registerIncomingPluginChannel(this, Channels.DIM_SWITCH.toString(), dimSwitchListener);
         getServer().getMessenger().registerIncomingPluginChannel(this, Channels.STATE_REQUEST.toString(),

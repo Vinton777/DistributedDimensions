@@ -26,37 +26,23 @@ public class RespawnListener implements Listener {
 
     @EventHandler
     public void onRespawn(PlayerRespawnEvent e) {
-        if (e.getRespawnReason() != PlayerRespawnEvent.RespawnReason.DEATH) return;
-
-        SpawnPointStore.Point anchor = SpawnPointStore.getAnchor(e.getPlayer());
-        if (anchor != null && anchor.dimension() == dimension) {
-            if (e.isAnchorSpawn()) return; // Vanilla used and charged the local anchor.
-            SpawnPointStore.clearAnchor(e.getPlayer());
-            anchor = null;
+        SpawnPointStore.Point point = SpawnPointStore.get(e.getPlayer());
+        if (point == null || point.dimension() == dimension) {
+            if (e.isAnchorSpawn() || e.isBedSpawn()) return;
         }
-        if (anchor != null) {
-            switchTo(e, anchor);
-            return;
-        }
-
-        SpawnPointStore.Point point = SpawnPointStore.getFallback(e.getPlayer());
         if (point != null && point.dimension() == dimension) {
-            if (e.isBedSpawn() || e.isAnchorSpawn()) return;
-            SpawnPointStore.clearFallback(e.getPlayer());
+            // Vanilla rejected this local bed/anchor (broken or out of charge).
+            SpawnPointStore.set(e.getPlayer(), null);
             point = null;
         }
         if (point == null && dimension == Dimension.OVERWORLD) return;
 
-        switchTo(e, point);
-    }
-
-    private void switchTo(PlayerRespawnEvent event, SpawnPointStore.Point point) {
         Dimension target = point == null ? Dimension.OVERWORLD : point.dimension();
         LocationData dest = point == null ? LocationData.of(0, 64, 0, 0, 0) : point.location();
 
         Bukkit.getScheduler().runTaskLater(plugin, () ->
             dimensionSwitchService.sendSwitchRequest(
-                event.getPlayer().getUniqueId(),
+                e.getPlayer().getUniqueId(),
                 target,
                 dest,
                 false

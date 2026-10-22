@@ -5,6 +5,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Wolf;
 import org.bukkit.entity.AbstractHorse;
+import org.bukkit.entity.HappyGhast;
+import org.bukkit.entity.SulfurCube;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.Material;
@@ -26,7 +28,8 @@ public final class EntityTransferCleanup {
             holder.getInventory().clear();
         }
         if (entity instanceof LivingEntity living && living.getEquipment() != null) {
-            if (entity instanceof Wolf || entity instanceof AbstractHorse || entity instanceof org.bukkit.entity.SulfurCube) {
+            if (entity instanceof Wolf || entity instanceof AbstractHorse || entity instanceof SulfurCube
+                || entity instanceof HappyGhast) {
                 living.getEquipment().setItem(EquipmentSlot.BODY, new ItemStack(Material.AIR));
             }
             living.getEquipment().clear();
