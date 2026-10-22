@@ -7,6 +7,7 @@ import org.bukkit.World;
 import org.bukkit.entity.*;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.EntityEquipment;
 
 import java.util.Map;
 
@@ -51,6 +52,28 @@ public final class EntitySpawner {
         // Chest state and llama strength determine inventory size.
         if (entity instanceof InventoryHolder holder && data.chestContents() != null) {
             holder.getInventory().setContents(data.chestContents());
+        }
+        if (entity instanceof LivingEntity living && data.equipment() != null) {
+            EntityEquipment equipment = living.getEquipment();
+            if (equipment != null) {
+                var saved = data.equipment();
+                equipment.setItemInMainHand(saved.mainHand());
+                equipment.setItemInOffHand(saved.offHand());
+                equipment.setArmorContents(saved.armor());
+                float[] chances = saved.dropChances();
+                equipment.setItemInMainHandDropChance(chances[0]);
+                equipment.setItemInOffHandDropChance(chances[1]);
+                equipment.setBootsDropChance(chances[2]);
+                equipment.setLeggingsDropChance(chances[3]);
+                equipment.setChestplateDropChance(chances[4]);
+                equipment.setHelmetDropChance(chances[5]);
+            }
+        }
+        if (entity instanceof Villager villager && data.villager() != null) {
+            var saved = data.villager();
+            villager.setVillagerExperience(saved.experience());
+            villager.setRestocksToday(saved.restocksToday());
+            villager.setRecipes(saved.recipes());
         }
         entity.setPortalCooldown(PortalConstants.PORTAL_COOLDOWN_TICKS);
 

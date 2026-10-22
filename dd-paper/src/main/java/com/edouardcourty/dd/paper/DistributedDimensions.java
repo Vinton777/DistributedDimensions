@@ -40,9 +40,7 @@ public class DistributedDimensions extends JavaPlugin {
         getServer().getMessenger().registerIncomingPluginChannel(this, Channels.SWITCH_FAILED.toString(), new SwitchFailedListener(this, positionStore, pendingVehicleStore));
         getServer().getPluginManager().registerEvents(pendingVehicleStore, this);
 
-        PlayerBroadcastListener broadcastListener = new PlayerBroadcastListener(this);
-        getServer().getMessenger().registerIncomingPluginChannel(this, Channels.PLAYER_BROADCAST.toString(), broadcastListener);
-        getServer().getPluginManager().registerEvents(broadcastListener, this);
+        getServer().getPluginManager().registerEvents(new PlayerBroadcastListener(), this);
 
         getServer().getPluginManager().registerEvents(new NetherPortalListener(dimension, dimensionSwitchService, positionStore), this);
         getServer().getPluginManager().registerEvents(new EndPortalListener(dimension, dimensionSwitchService, positionStore), this);

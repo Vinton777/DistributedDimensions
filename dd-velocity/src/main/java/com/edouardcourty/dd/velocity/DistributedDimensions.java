@@ -1,10 +1,8 @@
 package com.edouardcourty.dd.velocity;
 
 import com.edouardcourty.dd.common.messaging.Channels;
-import com.edouardcourty.dd.velocity.handler.ChatBroadcastHandler;
 import com.edouardcourty.dd.velocity.handler.DimensionSwitchHandler;
 import com.edouardcourty.dd.velocity.handler.EntityTransferHandler;
-import com.edouardcourty.dd.velocity.handler.JoinQuitBroadcastHandler;
 import com.edouardcourty.dd.velocity.listener.PlayerSessionListener;
 import com.edouardcourty.dd.velocity.store.LastServerStore;
 import com.edouardcourty.dd.velocity.util.DebugLogger;
@@ -60,8 +58,6 @@ public class DistributedDimensions {
 
         LastServerStore lastServerStore = new LastServerStore(dataDirectory, logger);
         server.getEventManager().register(this, new PlayerSessionListener(server, lastServerStore, entityTransferHandler));
-        server.getEventManager().register(this, new ChatBroadcastHandler(server));
-        server.getEventManager().register(this, new JoinQuitBroadcastHandler(server));
     }
 
     @Subscribe

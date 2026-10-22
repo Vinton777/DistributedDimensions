@@ -13,7 +13,7 @@ A Minecraft plugin system that splits a world across **one Paper server per dime
   (dd-paper)  (dd-paper) (dd-paper)
 ```
 
-Crossing a portal feels identical to vanilla: inventory, XP, hunger, gamemode, and chat are preserved across all servers in real time.
+Crossing a portal transfers player inventory, XP, hunger, and gamemode between servers. Chat stays local to each server.
 
 ---
 
@@ -34,7 +34,7 @@ Nether coordinate scaling (1:8 ratio) and End platform spawning are handled auto
 |---|---|
 | `dd-common` | Shared library: `Dimension` enum, `LocationData`, `Channels`, `DimensionSwitchService` interface |
 | `dd-paper` | Paper plugin — portal detection, state serialization, player teleportation, dimension guard |
-| `dd-velocity` | Velocity plugin — player routing, state forwarding, cross-server chat |
+| `dd-velocity` | Velocity plugin — player routing and state forwarding |
 
 - **Paper API:** 1.21.11 · **Java:** 21
 - **Velocity API:** 3.5.0-SNAPSHOT

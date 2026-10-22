@@ -9,7 +9,7 @@ DistributedDimensions est un système de plugins Minecraft qui divise un monde e
 
 Le tout est piloté par un **proxy Velocity** qui orchestre les transitions entre serveurs.
 
-L'objectif est une expérience **seamless** pour le joueur : traverser un portail doit sembler identique à un monde vanilla — les portails sont liés par coordonnées, l'inventaire, l'XP, le gamemode et le chat sont préservés en temps réel entre tous les serveurs.
+L'objectif est une expérience **seamless** pour le joueur : les portails sont liés par coordonnées et l'inventaire, l'XP et le gamemode sont transférés entre serveurs. Le chat reste local à chaque serveur.
 
 ---
 
@@ -63,7 +63,7 @@ Plugin installé sur le proxy Velocity.
 
 | Package | Rôle |
 |---|---|
-| `handler/` | `DimensionSwitchHandler` — route le joueur + forward le message, `ChatBroadcastHandler` — diffuse le chat cross-serveur |
+| `handler/` | `DimensionSwitchHandler` — route le joueur et transmet son état; `EntityTransferHandler` — transfère les entités |
 
 Version API ciblée : **Velocity 3.5.0-SNAPSHOT**
 

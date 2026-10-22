@@ -2,6 +2,7 @@ package com.edouardcourty.dd.paper.messaging;
 
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.inventory.InventoryHolder;
 
 import java.util.List;
@@ -18,6 +19,9 @@ public final class EntityTransferCleanup {
         }
         if (entity instanceof InventoryHolder holder) {
             holder.getInventory().clear();
+        }
+        if (entity instanceof LivingEntity living && living.getEquipment() != null) {
+            living.getEquipment().clear();
         }
         entity.remove();
     }
