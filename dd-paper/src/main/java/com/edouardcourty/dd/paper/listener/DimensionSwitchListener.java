@@ -25,16 +25,13 @@ public class DimensionSwitchListener implements PluginMessageListener {
     }
 
     @Override
-    public void onPluginMessageReceived(@NotNull String channel, @NotNull Player player, byte @NotNull [] bytes) {
-        boolean isRestore = channel.equals(Channels.RESTORE_STATE.toString());
-        if (!channel.equals(Channels.DIM_SWITCH.toString()) && !isRestore) return;
+    public void onPluginMessageReceived(@NotNull String channel, @NotNull Player carrier, byte @NotNull [] bytes) {
+        if (!channel.equals(Channels.DIM_SWITCH.toString())) return;
 
         PlayerStateSerializer.PlayerState state = PlayerStateSerializer.read(ByteStreams.newDataInput(bytes));
-
-        // Restoration : appliquer état sans téléporter ni construire de portail
-        if (isRestore) {
-            positionStore.clear(state.playerUuid());
-            applyState(player, state);
+        Player player = plugin.getServer().getPlayer(state.playerUuid());
+        if (player == null) {
+            plugin.getLogger().warning("[DimensionSwitch] Player " + state.playerUuid() + " is not online; state not applied.");
             return;
         }
 
@@ -76,6 +73,7 @@ public class DimensionSwitchListener implements PluginMessageListener {
 
         positionStore.clear(state.playerUuid());
         applyState(player, state);
+        player.saveData();
 
         // Remonter le joueur dans son véhicule si applicable
         if (state.vehicle() != null) {

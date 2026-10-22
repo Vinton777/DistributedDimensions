@@ -3,7 +3,6 @@ package com.edouardcourty.dd.velocity.listener;
 import com.edouardcourty.dd.common.messaging.Channels;
 import com.edouardcourty.dd.velocity.handler.EntityTransferHandler;
 import com.edouardcourty.dd.velocity.store.LastServerStore;
-import com.edouardcourty.dd.velocity.store.PlayerStateStore;
 import com.velocitypowered.api.event.EventTask;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.connection.DisconnectEvent;
@@ -20,13 +19,11 @@ import java.util.concurrent.TimeUnit;
 public class PlayerSessionListener {
     private final ProxyServer server;
     private final LastServerStore lastServerStore;
-    private final PlayerStateStore playerStateStore;
     private final EntityTransferHandler entityTransferHandler;
 
-    public PlayerSessionListener(ProxyServer server, LastServerStore lastServerStore, PlayerStateStore playerStateStore, EntityTransferHandler entityTransferHandler) {
+    public PlayerSessionListener(ProxyServer server, LastServerStore lastServerStore, EntityTransferHandler entityTransferHandler) {
         this.server = server;
         this.lastServerStore = lastServerStore;
-        this.playerStateStore = playerStateStore;
         this.entityTransferHandler = entityTransferHandler;
     }
 
@@ -59,16 +56,6 @@ public class PlayerSessionListener {
         event.getPlayer().getCurrentServer().ifPresent(conn -> {
             entityTransferHandler.deliverPending(conn.getServer());
 
-            // Restore full player state on first connection (reconnect after switch)
-            if (event.getPreviousServer() == null) {
-                playerStateStore.get(event.getPlayer().getUniqueId()).ifPresent(stateBytes -> {
-                    conn.getServer().sendPluginMessage(
-                        com.velocitypowered.api.proxy.messages.MinecraftChannelIdentifier.from(Channels.RESTORE_STATE.toString()),
-                        stateBytes
-                    );
-                    playerStateStore.delete(event.getPlayer().getUniqueId());
-                });
-            }
         });
     }
 

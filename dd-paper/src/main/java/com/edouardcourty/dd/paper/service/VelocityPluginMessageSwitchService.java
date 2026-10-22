@@ -5,6 +5,9 @@ import com.edouardcourty.dd.common.model.Dimension;
 import com.edouardcourty.dd.common.model.LocationData;
 import com.edouardcourty.dd.common.service.DimensionSwitchService;
 import com.edouardcourty.dd.paper.messaging.PlayerStateSerializer;
+import com.edouardcourty.dd.paper.messaging.EntityTransferCleanup;
+import com.edouardcourty.dd.paper.messaging.EntityTransferSerializer;
+import com.edouardcourty.dd.paper.store.PendingVehicleStore;
 import com.google.common.io.ByteStreams;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -14,19 +17,34 @@ import java.util.UUID;
 
 public class VelocityPluginMessageSwitchService implements DimensionSwitchService {
     private final JavaPlugin plugin;
+    private final PendingVehicleStore pendingVehicleStore;
 
-    public VelocityPluginMessageSwitchService(JavaPlugin plugin) {
+    public VelocityPluginMessageSwitchService(JavaPlugin plugin, PendingVehicleStore pendingVehicleStore) {
         this.plugin = plugin;
+        this.pendingVehicleStore = pendingVehicleStore;
     }
 
     @Override
     public void sendSwitchRequest(UUID playerUuid, Dimension target, LocationData destination, boolean buildPortal) {
         Player player = Bukkit.getPlayer(playerUuid);
         if (player == null) return;
+        org.bukkit.entity.Entity vehicle = player.getVehicle();
 
         var out = ByteStreams.newDataOutput();
         PlayerStateSerializer.write(out, playerUuid, target, destination, player, buildPortal);
-        player.sendPluginMessage(plugin, Channels.DIM_SWITCH.toString(), out.toByteArray());
+        if (vehicle != null) {
+            var vehicleOut = ByteStreams.newDataOutput();
+            EntityTransferSerializer.writeRoot(vehicleOut, vehicle, target, destination.x, destination.y, destination.z);
+            pendingVehicleStore.remember(playerUuid, vehicle.getLocation(),
+                EntityTransferSerializer.readRoot(ByteStreams.newDataInput(vehicleOut.toByteArray())));
+            EntityTransferCleanup.remove(vehicle);
+        }
+        try {
+            player.sendPluginMessage(plugin, Channels.DIM_SWITCH.toString(), out.toByteArray());
+        } catch (RuntimeException ex) {
+            pendingVehicleStore.restore(player);
+            throw ex;
+        }
     }
 }
 

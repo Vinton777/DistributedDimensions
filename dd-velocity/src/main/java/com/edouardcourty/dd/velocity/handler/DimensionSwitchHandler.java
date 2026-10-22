@@ -1,7 +1,6 @@
 package com.edouardcourty.dd.velocity.handler;
 
 import com.edouardcourty.dd.common.messaging.Channels;
-import com.edouardcourty.dd.velocity.store.PlayerStateStore;
 import com.google.common.io.ByteArrayDataInput;
 import com.google.common.io.ByteStreams;
 import com.velocitypowered.api.event.connection.PluginMessageEvent;
@@ -18,12 +17,10 @@ import java.util.concurrent.TimeUnit;
 
 public class DimensionSwitchHandler {
     private final ProxyServer server;
-    private final PlayerStateStore stateStore;
     private final Map<String, String> serverNames;
 
-    public DimensionSwitchHandler(ProxyServer server, PlayerStateStore stateStore, Map<String, String> serverNames) {
+    public DimensionSwitchHandler(ProxyServer server, Map<String, String> serverNames) {
         this.server = server;
-        this.stateStore = stateStore;
         this.serverNames = serverNames;
     }
 
@@ -50,7 +47,6 @@ public class DimensionSwitchHandler {
             .orTimeout(5, TimeUnit.SECONDS)
             .thenAccept(result -> {
                 if (result.getStatus() == ConnectionRequestBuilder.Status.SUCCESS) {
-                    stateStore.save(playerUuid, stateBytes);
                     player.getCurrentServer().ifPresent(conn ->
                         conn.sendPluginMessage(
                             MinecraftChannelIdentifier.from(Channels.DIM_SWITCH.toString()),

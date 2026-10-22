@@ -14,6 +14,7 @@ import com.edouardcourty.dd.paper.listener.RespawnListener;
 import com.edouardcourty.dd.paper.listener.SwitchFailedListener;
 import com.edouardcourty.dd.paper.service.VelocityPluginMessageSwitchService;
 import com.edouardcourty.dd.paper.store.PrePortalPositionStore;
+import com.edouardcourty.dd.paper.store.PendingVehicleStore;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class DistributedDimensions extends JavaPlugin {
@@ -25,19 +26,19 @@ public class DistributedDimensions extends JavaPlugin {
         saveDefaultConfig();
 
         dimension = Dimension.valueOf(getConfig().getString("world", Dimension.OVERWORLD.name()));
-        dimensionSwitchService = new VelocityPluginMessageSwitchService(this);
-
         PrePortalPositionStore positionStore = new PrePortalPositionStore(this);
+        PendingVehicleStore pendingVehicleStore = new PendingVehicleStore();
+        dimensionSwitchService = new VelocityPluginMessageSwitchService(this, pendingVehicleStore);
 
         DimensionSwitchListener dimSwitchListener = new DimensionSwitchListener(this, positionStore);
         getServer().getMessenger().registerOutgoingPluginChannel(this, Channels.DIM_SWITCH.toString());
         getServer().getMessenger().registerIncomingPluginChannel(this, Channels.DIM_SWITCH.toString(), dimSwitchListener);
-        getServer().getMessenger().registerIncomingPluginChannel(this, Channels.RESTORE_STATE.toString(), dimSwitchListener);
 
         getServer().getMessenger().registerOutgoingPluginChannel(this, Channels.ENTITY_TRANSFER.toString());
         getServer().getMessenger().registerIncomingPluginChannel(this, Channels.ENTITY_TRANSFER.toString(), new EntitySpawnListener(this));
 
-        getServer().getMessenger().registerIncomingPluginChannel(this, Channels.SWITCH_FAILED.toString(), new SwitchFailedListener(this, positionStore));
+        getServer().getMessenger().registerIncomingPluginChannel(this, Channels.SWITCH_FAILED.toString(), new SwitchFailedListener(this, positionStore, pendingVehicleStore));
+        getServer().getPluginManager().registerEvents(pendingVehicleStore, this);
 
         PlayerBroadcastListener broadcastListener = new PlayerBroadcastListener(this);
         getServer().getMessenger().registerIncomingPluginChannel(this, Channels.PLAYER_BROADCAST.toString(), broadcastListener);

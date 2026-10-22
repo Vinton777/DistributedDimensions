@@ -97,7 +97,10 @@ public class EntityTransferSerializer {
 
         out.writeUTF(EntityExtraDataCodec.encode(entity));
 
-        List<Entity> passengers = entity.getPassengers();
+        // Players are transferred through PlayerStateSerializer, not spawned as entities.
+        List<Entity> passengers = entity.getPassengers().stream()
+            .filter(passenger -> !(passenger instanceof Player))
+            .toList();
         out.writeInt(passengers.size());
         for (Entity passenger : passengers) writeEntity(out, passenger);
     }

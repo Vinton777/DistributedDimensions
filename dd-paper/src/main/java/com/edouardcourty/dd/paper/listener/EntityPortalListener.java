@@ -4,6 +4,7 @@ import com.edouardcourty.dd.common.messaging.Channels;
 import com.edouardcourty.dd.common.model.Dimension;
 import com.edouardcourty.dd.common.model.PortalConstants;
 import com.edouardcourty.dd.paper.messaging.EntityTransferSerializer;
+import com.edouardcourty.dd.paper.messaging.EntityTransferCleanup;
 import com.edouardcourty.dd.paper.service.NetherCoordinateScaler;
 import com.google.common.io.ByteStreams;
 import io.papermc.paper.event.entity.EntityInsideBlockEvent;
@@ -13,7 +14,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityPortalEvent;
-import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.Collection;
@@ -126,24 +126,7 @@ public class EntityPortalListener implements Listener {
         EntityTransferSerializer.writeRoot(out, entity, target, destX, destY, destZ);
         carrier.sendPluginMessage(plugin, Channels.ENTITY_TRANSFER.toString(), out.toByteArray());
 
-        // The payload owns these items now. Empty every inventory in the passenger tree
-        // before removing the source entities, so removal cannot drop a second copy.
-        clearInventories(entity);
-        removeEntityTree(entity);
-    }
-
-    private void clearInventories(Entity entity) {
-        entity.getPassengers().forEach(this::clearInventories);
-        if (entity instanceof InventoryHolder holder) {
-            holder.getInventory().clear();
-        }
-    }
-
-    private void removeEntityTree(Entity entity) {
-        for (Entity passenger : entity.getPassengers()) {
-            entity.removePassenger(passenger);
-            removeEntityTree(passenger);
-        }
-        entity.remove();
+        // The payload owns these items now; never leave a source boat or passenger behind.
+        EntityTransferCleanup.remove(entity);
     }
 }

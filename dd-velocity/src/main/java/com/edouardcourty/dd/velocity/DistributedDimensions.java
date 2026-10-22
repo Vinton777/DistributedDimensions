@@ -7,7 +7,6 @@ import com.edouardcourty.dd.velocity.handler.EntityTransferHandler;
 import com.edouardcourty.dd.velocity.handler.JoinQuitBroadcastHandler;
 import com.edouardcourty.dd.velocity.listener.PlayerSessionListener;
 import com.edouardcourty.dd.velocity.store.LastServerStore;
-import com.edouardcourty.dd.velocity.store.PlayerStateStore;
 import com.edouardcourty.dd.velocity.util.DebugLogger;
 import com.google.inject.Inject;
 import com.velocitypowered.api.event.Subscribe;
@@ -56,12 +55,11 @@ public class DistributedDimensions {
         server.getChannelRegistrar().register(dimSwitchChannel);
         server.getChannelRegistrar().register(entityTransferChannel);
 
-        PlayerStateStore playerStateStore = new PlayerStateStore(dataDirectory, logger);
-        dimensionSwitchHandler = new DimensionSwitchHandler(server, playerStateStore, serverNames);
+        dimensionSwitchHandler = new DimensionSwitchHandler(server, serverNames);
         entityTransferHandler = new EntityTransferHandler(server, serverNames);
 
         LastServerStore lastServerStore = new LastServerStore(dataDirectory, logger);
-        server.getEventManager().register(this, new PlayerSessionListener(server, lastServerStore, playerStateStore, entityTransferHandler));
+        server.getEventManager().register(this, new PlayerSessionListener(server, lastServerStore, entityTransferHandler));
         server.getEventManager().register(this, new ChatBroadcastHandler(server));
         server.getEventManager().register(this, new JoinQuitBroadcastHandler(server));
     }

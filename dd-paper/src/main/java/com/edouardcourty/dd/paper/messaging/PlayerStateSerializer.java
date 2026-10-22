@@ -95,7 +95,6 @@ public class PlayerStateSerializer {
         if (vehicle != null) {
             out.writeBoolean(true);
             EntityTransferSerializer.writeRoot(out, vehicle, target, dest.x, dest.y, dest.z);
-            player.leaveVehicle();
         } else {
             out.writeBoolean(false);
         }
