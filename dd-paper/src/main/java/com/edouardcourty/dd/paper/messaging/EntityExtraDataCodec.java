@@ -40,6 +40,9 @@ public final class EntityExtraDataCodec {
             map.put("domestication", String.valueOf(horse.getDomestication()));
             map.put("jumpStrength", String.valueOf(horse.getJumpStrength()));
         }
+        if (entity instanceof ChestedHorse horse) {
+            map.put("carryingChest", String.valueOf(horse.isCarryingChest()));
+        }
         if (entity instanceof Horse horse) {
             map.put("horseColor", horse.getColor().name());
             map.put("horseStyle", horse.getStyle().name());
@@ -135,6 +138,9 @@ public final class EntityExtraDataCodec {
         if (entity instanceof AbstractHorse horse) {
             if (map.containsKey("domestication")) horse.setDomestication(Integer.parseInt(map.get("domestication")));
             if (map.containsKey("jumpStrength")) horse.setJumpStrength(Double.parseDouble(map.get("jumpStrength")));
+        }
+        if (entity instanceof ChestedHorse horse && map.containsKey("carryingChest")) {
+            horse.setCarryingChest(Boolean.parseBoolean(map.get("carryingChest")));
         }
         if (entity instanceof Horse horse) {
             if (map.containsKey("horseColor")) horse.setColor(Horse.Color.valueOf(map.get("horseColor")));

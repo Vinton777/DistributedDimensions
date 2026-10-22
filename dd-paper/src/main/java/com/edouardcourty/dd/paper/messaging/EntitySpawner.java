@@ -47,11 +47,11 @@ public final class EntitySpawner {
             item.setItemStack(ItemStack.deserializeBytes(data.itemData()));
         }
 
+        EntityExtraDataCodec.apply(entity, data.extraData());
+        // Chest state and llama strength determine inventory size.
         if (entity instanceof InventoryHolder holder && data.chestContents() != null) {
             holder.getInventory().setContents(data.chestContents());
         }
-
-        EntityExtraDataCodec.apply(entity, data.extraData());
         entity.setPortalCooldown(PortalConstants.PORTAL_COOLDOWN_TICKS);
 
         for (EntityTransferSerializer.EntityData passengerData : data.passengers()) {

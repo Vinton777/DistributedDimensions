@@ -13,6 +13,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityPortalEvent;
+import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.Collection;
@@ -75,7 +76,7 @@ public class EntityPortalListener implements Listener {
         Entity entity = e.getEntity();
         if (entity instanceof Player) return; // géré par EndPortalListener
 
-        if (isRecentlyTransferred(entity)) return;
+        if (isRecentlyTransferred(entity)) { e.setCancelled(true); return; }
 
         Dimension target;
         double destX, destY, destZ;
@@ -96,6 +97,8 @@ public class EntityPortalListener implements Listener {
             return;
         }
 
+        // Prevent the vanilla portal action from running alongside our cross-server transfer.
+        e.setCancelled(true);
         sendTransfer(entity, target, destX, destY, destZ);
     }
 
@@ -112,8 +115,7 @@ public class EntityPortalListener implements Listener {
     private void sendTransfer(Entity entity, Dimension target, double destX, double destY, double destZ) {
         Collection<? extends Player> online = plugin.getServer().getOnlinePlayers();
         if (online.isEmpty()) {
-            plugin.getLogger().warning("[EntityPortal] No player online, removing entity.");
-            entity.remove();
+            plugin.getLogger().warning("[EntityPortal] No player online; transfer deferred.");
             return;
         }
         Player carrier = online.iterator().next();
@@ -124,7 +126,24 @@ public class EntityPortalListener implements Listener {
         EntityTransferSerializer.writeRoot(out, entity, target, destX, destY, destZ);
         carrier.sendPluginMessage(plugin, Channels.ENTITY_TRANSFER.toString(), out.toByteArray());
 
-        entity.getPassengers().forEach(entity::removePassenger);
+        // The payload owns these items now. Empty every inventory in the passenger tree
+        // before removing the source entities, so removal cannot drop a second copy.
+        clearInventories(entity);
+        removeEntityTree(entity);
+    }
+
+    private void clearInventories(Entity entity) {
+        entity.getPassengers().forEach(this::clearInventories);
+        if (entity instanceof InventoryHolder holder) {
+            holder.getInventory().clear();
+        }
+    }
+
+    private void removeEntityTree(Entity entity) {
+        for (Entity passenger : entity.getPassengers()) {
+            entity.removePassenger(passenger);
+            removeEntityTree(passenger);
+        }
         entity.remove();
     }
 }
