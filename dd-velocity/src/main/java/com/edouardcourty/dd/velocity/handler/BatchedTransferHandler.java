@@ -12,11 +12,15 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-/** Holds advancement batches until the player finishes switching servers. */
-public final class AdvancementTransferHandler {
+/** Holds a player's batches until the destination server connection is ready. */
+public final class BatchedTransferHandler {
     private static final long EXPIRY_MS = 60_000;
     private final Map<UUID, Pending> pending = new ConcurrentHashMap<>();
-    private final MinecraftChannelIdentifier channel = MinecraftChannelIdentifier.from(Channels.ADVANCEMENT_TRANSFER.toString());
+    private final MinecraftChannelIdentifier channel;
+
+    public BatchedTransferHandler(Channels channel) {
+        this.channel = MinecraftChannelIdentifier.from(channel.toString());
+    }
 
     public void handle(PluginMessageEvent event) {
         event.setResult(PluginMessageEvent.ForwardResult.handled());

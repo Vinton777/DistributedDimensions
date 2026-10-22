@@ -2,7 +2,7 @@ package com.edouardcourty.dd.velocity.listener;
 
 import com.edouardcourty.dd.common.messaging.Channels;
 import com.edouardcourty.dd.velocity.handler.EntityTransferHandler;
-import com.edouardcourty.dd.velocity.handler.AdvancementTransferHandler;
+import com.edouardcourty.dd.velocity.handler.BatchedTransferHandler;
 import com.edouardcourty.dd.velocity.store.LastServerStore;
 import com.velocitypowered.api.event.EventTask;
 import com.velocitypowered.api.event.Subscribe;
@@ -21,15 +21,18 @@ public class PlayerSessionListener {
     private final ProxyServer server;
     private final LastServerStore lastServerStore;
     private final EntityTransferHandler entityTransferHandler;
-    private final AdvancementTransferHandler advancementTransferHandler;
+    private final BatchedTransferHandler advancementTransferHandler;
+    private final BatchedTransferHandler enderChestTransferHandler;
 
     public PlayerSessionListener(ProxyServer server, LastServerStore lastServerStore,
                                  EntityTransferHandler entityTransferHandler,
-                                 AdvancementTransferHandler advancementTransferHandler) {
+                                 BatchedTransferHandler advancementTransferHandler,
+                                 BatchedTransferHandler enderChestTransferHandler) {
         this.server = server;
         this.lastServerStore = lastServerStore;
         this.entityTransferHandler = entityTransferHandler;
         this.advancementTransferHandler = advancementTransferHandler;
+        this.enderChestTransferHandler = enderChestTransferHandler;
     }
 
     @Subscribe
@@ -67,6 +70,7 @@ public class PlayerSessionListener {
     @Subscribe
     public void onDisconnect(DisconnectEvent event) {
         advancementTransferHandler.discard(event.getPlayer().getUniqueId());
+        enderChestTransferHandler.discard(event.getPlayer().getUniqueId());
         event.getPlayer().getCurrentServer().ifPresent(conn ->
             lastServerStore.save(event.getPlayer().getUniqueId(), conn.getServerInfo().getName())
         );

@@ -10,10 +10,11 @@ The changes are preserved as successive tags in this fork. Earlier tags document
 | `codex-fix-v4` | Route ridden vehicles through the player's switch and ignore legacy PLAYER passenger payloads. | Superseded |
 | `codex-fix-v5` | Transfer mob and allay equipment, villager trades and progress; remove proxy-wide chat and plugin join/quit messages. | Superseded |
 | `codex-fix-v6` | Preserve tameable owner UUIDs and merge awarded advancement criteria across servers in bounded batches. | Superseded |
-| `codex-fix-v7` | Transfer player HP, base maximum HP, and absorption on dimension switches. | Current |
+| `codex-fix-v7` | Transfer player HP, base maximum HP, and absorption on dimension switches. | Superseded |
+| `codex-fix-v8` | Transfer ender chest contents in bounded packets and apply only after the complete inventory arrives. | Current |
 
 ## Install
 
-Build with Java 21 and Maven (`mvn clean package`), or download both JARs from the latest `codex-fix-v7` release. Replace the old plugin JAR on **every** Paper/Purpur server and on Velocity. Remove old copies from each `plugins/` directory before restarting. The old Velocity `player-states/` snapshots are no longer read; they are left on disk for manual backup or removal.
+Build with Java 21 and Maven (`mvn clean package`), or download both JARs from the latest `codex-fix-v8` release. Replace the old plugin JAR on **every** Paper/Purpur server and on Velocity. Remove old copies from each `plugins/` directory before restarting. The old Velocity `player-states/` snapshots are no longer read; they are left on disk for manual backup or removal.
 
-The build was verified with Maven. Cross-server behavior still needs testing on a running network, especially half-heart health, absorption hearts, custom maximum health, respawn, and an ordinary restart.
+The build was verified with Maven. Cross-server behavior still needs testing on a running network, especially full and empty ender chests, shulker boxes with large item data, failed switches, and an ordinary restart.

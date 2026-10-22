@@ -4,6 +4,7 @@ public enum Channels {
     DIM_SWITCH("dd:dimension_switch"),
     ENTITY_TRANSFER("dd:entity_transfer"),
     ADVANCEMENT_TRANSFER("dd:advancements"),
+    ENDER_CHEST_TRANSFER("dd:ender_chest"),
     SWITCH_FAILED("dd:switch_failed");
 
     private final String channel;
