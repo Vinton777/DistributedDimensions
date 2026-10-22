@@ -14,6 +14,7 @@ import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
+import java.io.EOFException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -28,7 +29,8 @@ import java.util.UUID;
  *   xpLevel (int), xpProgress (float),
  *   foodLevel (int), saturation (float), exhaustion (float),
  *   gameMode (UTF),
- *   inventory contents, armor contents, offhand item
+ *   inventory contents, armor contents, offhand item,
+ *   buildPortal, potion effects, vehicle, selected hotbar slot (int, optional for old saves)
  *
  * Format d'un item : int length (0 = vide/AIR), puis bytes si non vide.
  */
@@ -49,6 +51,7 @@ public class PlayerStateSerializer {
         ItemStack[] inventoryContents,
         ItemStack[] armorContents,
         ItemStack offhand,
+        int selectedHotbarSlot,
         boolean buildPortal,
         EntityTransferSerializer.EntityData vehicle,  // null si le joueur n'est pas dans un véhicule
         List<PotionEffect> potionEffects
@@ -96,6 +99,9 @@ public class PlayerStateSerializer {
         } else {
             out.writeBoolean(false);
         }
+
+        // Appended so older persisted player states can still be restored.
+        out.writeInt(inv.getHeldItemSlot());
     }
 
     public static PlayerState read(ByteArrayDataInput in) {
@@ -132,12 +138,19 @@ public class PlayerStateSerializer {
             ? EntityTransferSerializer.readRoot(in)
             : null;
 
+        int selectedHotbarSlot = 0;
+        try {
+            selectedHotbarSlot = in.readInt();
+        } catch (IllegalStateException ex) {
+            if (!(ex.getCause() instanceof EOFException)) throw ex;
+        }
+
         return new PlayerState(
             playerUuid, dimension,
             LocationData.of(x, y, z, yaw, pitch),
             xpLevel, xpProgress,
             foodLevel, saturation, exhaustion,
-            gameMode, contents, armor, offhand, buildPortal, vehicle, potionEffects
+            gameMode, contents, armor, offhand, selectedHotbarSlot, buildPortal, vehicle, potionEffects
         );
     }
 

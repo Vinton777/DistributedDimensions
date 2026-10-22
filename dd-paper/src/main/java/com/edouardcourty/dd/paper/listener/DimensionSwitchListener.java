@@ -92,6 +92,10 @@ public class DimensionSwitchListener implements PluginMessageListener {
         player.getInventory().setContents(state.inventoryContents());
         player.getInventory().setArmorContents(state.armorContents());
         player.getInventory().setItemInOffHand(state.offhand());
+        if (state.selectedHotbarSlot() >= 0 && state.selectedHotbarSlot() <= 8) {
+            player.getInventory().setHeldItemSlot(state.selectedHotbarSlot());
+        }
+        player.updateInventory();
         player.setLevel(state.xpLevel());
         player.setExp(state.xpProgress());
         player.setFoodLevel(state.foodLevel());
