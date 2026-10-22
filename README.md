@@ -25,7 +25,7 @@ Crossing a portal or using `/server` transfers player inventory, ender chest, HP
 4. The target server deserializes the state, finds a safe spawn location (or builds a portal), and teleports the player
 
 Nether coordinate scaling (1:8 ratio) and End platform spawning are handled automatically.
-The selected bed or respawn anchor is synchronized across dimensions. A graceful Paper shutdown sends a final player snapshot to Velocity for a later fallback connection while the proxy remains online.
+A charged respawn anchor takes priority over an older bed spawn across dimensions. The bed remains a fallback if the anchor is removed or runs out of charge. A graceful Paper shutdown sends a final player snapshot to Velocity for a later fallback connection while the proxy remains online.
 
 ---
 
