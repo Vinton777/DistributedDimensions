@@ -13,6 +13,7 @@ import io.papermc.paper.event.entity.EntityInsideBlockEvent;
 import org.bukkit.Material;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.SulfurCube;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityPortalEvent;
@@ -78,8 +79,17 @@ public class EntityPortalListener implements Listener {
     @EventHandler
     public void onEntityInsideBlock(EntityInsideBlockEvent e) {
         Material type = e.getBlock().getType();
-        if (type != Material.END_PORTAL && type != Material.END_GATEWAY) return;
         Entity entity = e.getEntity();
+        if (type == Material.NETHER_PORTAL && entity instanceof SulfurCube cube && dimension != Dimension.END) {
+            // A backend with only one dimension may never emit EntityPortalEvent for this mob.
+            e.setCancelled(true);
+            if (isRecentlyTransferred(cube)) return;
+            NetherCoordinateScaler.ScaledCoords dest = NetherCoordinateScaler.scale(
+                dimension, cube.getX(), cube.getY(), cube.getZ());
+            sendTransfer(cube, dest.target(), dest.x(), dest.y(), dest.z());
+            return;
+        }
+        if (type != Material.END_PORTAL && type != Material.END_GATEWAY) return;
         if (entity instanceof Player) return; // géré par EndPortalListener
 
         if (isRecentlyTransferred(entity)) { e.setCancelled(true); return; }

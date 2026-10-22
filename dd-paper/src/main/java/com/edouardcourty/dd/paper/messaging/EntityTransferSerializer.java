@@ -246,7 +246,7 @@ public class EntityTransferSerializer {
     }
 
     private static boolean supportsBodyEquipment(Entity entity) {
-        return entity instanceof Wolf || entity instanceof AbstractHorse;
+        return entity instanceof Wolf || entity instanceof AbstractHorse || entity instanceof SulfurCube;
     }
 
     private static void writeRecipe(ByteArrayDataOutput out, MerchantRecipe recipe) {

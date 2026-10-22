@@ -2,5 +2,5 @@
 name: DistributedDimensions
 main: com.edouardcourty.dd.paper.DistributedDimensions
 version: 1.0.0
-api-version: 1.21
+api-version: '26.3'
 author: Edouard Courty <https://github.com/EdouardCourty>

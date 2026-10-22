@@ -26,7 +26,7 @@ public final class EntityTransferCleanup {
             holder.getInventory().clear();
         }
         if (entity instanceof LivingEntity living && living.getEquipment() != null) {
-            if (entity instanceof Wolf || entity instanceof AbstractHorse) {
+            if (entity instanceof Wolf || entity instanceof AbstractHorse || entity instanceof org.bukkit.entity.SulfurCube) {
                 living.getEquipment().setItem(EquipmentSlot.BODY, new ItemStack(Material.AIR));
             }
             living.getEquipment().clear();

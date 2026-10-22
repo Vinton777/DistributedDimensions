@@ -63,7 +63,7 @@ public final class EntitySpawner {
                 equipment.setLeggingsDropChance(chances[3]);
                 equipment.setChestplateDropChance(chances[4]);
                 equipment.setHelmetDropChance(chances[5]);
-                if (saved.body() != null && (entity instanceof Wolf || entity instanceof AbstractHorse)) {
+                if (saved.body() != null && (entity instanceof Wolf || entity instanceof AbstractHorse || entity instanceof SulfurCube)) {
                     equipment.setItem(EquipmentSlot.BODY, saved.body());
                 }
             }

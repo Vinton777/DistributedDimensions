@@ -25,8 +25,12 @@ public final class EntityExtraDataCodec {
             map.put("adult", String.valueOf(ageable.isAdult()));
             if (!ageable.isAdult()) map.put("age", String.valueOf(ageable.getAge()));
         }
-        if (entity instanceof Slime slime) {
-            map.put("size", String.valueOf(slime.getSize()));
+        if (entity instanceof AbstractCubeMob cube) {
+            map.put("size", String.valueOf(cube.getSize()));
+            map.put("canWander", String.valueOf(cube.canWander()));
+        }
+        if (entity instanceof SulfurCube cube) {
+            map.put("fuseTicks", String.valueOf(cube.getFuseTicks()));
         }
         if (entity instanceof Tameable tameable) {
             map.put("tamed", String.valueOf(tameable.isTamed()));
@@ -132,8 +136,13 @@ public final class EntityExtraDataCodec {
             if ("true".equals(map.get("adult"))) ageable.setAdult();
             else if (map.containsKey("age")) ageable.setAge(Integer.parseInt(map.get("age")));
         }
-        if (entity instanceof Slime slime && map.containsKey("size")) {
-            slime.setSize(Integer.parseInt(map.get("size")));
+        if (entity instanceof AbstractCubeMob cube) {
+            if (map.containsKey("size")) cube.setSize(Integer.parseInt(map.get("size")));
+            if (map.containsKey("canWander")) cube.setWander(Boolean.parseBoolean(map.get("canWander")));
+        }
+        if (entity instanceof SulfurCube cube && map.containsKey("fuseTicks")) {
+            int fuseTicks = Integer.parseInt(map.get("fuseTicks"));
+            if (fuseTicks >= 0) cube.setFuseTicks(fuseTicks);
         }
         if (entity instanceof Tameable tameable && map.containsKey("tamed")) {
             tameable.setTamed("true".equals(map.get("tamed")));

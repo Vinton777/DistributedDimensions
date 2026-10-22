@@ -13,7 +13,7 @@ A Minecraft plugin system that splits a world across **one Paper server per dime
   (dd-paper)  (dd-paper) (dd-paper)
 ```
 
-Crossing a portal or using `/server` transfers player inventory, ender chest, HP, XP, hunger, gamemode, and advancement progress between servers. Tamed mobs keep their owner. Villager reputation, horse attributes, and body armor transfer with entities. Chat stays local to each server.
+Crossing a portal or using `/server` transfers player inventory, ender chest, HP, XP, hunger, gamemode, and advancement progress between servers. Tamed mobs keep their owner. Villager reputation, horse attributes, and body armor transfer with entities. Sulfur cubes transfer with their swallowed block and cube properties. Chat stays local to each server.
 
 ---
 
@@ -37,16 +37,16 @@ The selected bed or respawn anchor is synchronized across dimensions. A graceful
 | `dd-paper` | Paper plugin — portal detection, state serialization, player teleportation, dimension guard |
 | `dd-velocity` | Velocity plugin — player routing and state forwarding |
 
-- **Paper API:** 1.21.11 · **Java:** 21
+- **Paper API:** 26.3 · **Java:** 25
 - **Velocity API:** 3.5.0-SNAPSHOT
 
 ---
 
 ## Requirements
 
-- Java 21
+- Java 25
 - A Velocity 3.x proxy
-- Three Paper 1.21.11 servers (one per dimension)
+- Three Paper 26.3 servers (one per dimension)
 
 ---
 
@@ -61,8 +61,7 @@ make stop     # docker compose stop
 make logs     # docker compose logs -f
 ```
 
-A ready-to-use Docker Compose environment is included in `.dev/`.  
-Connect with a Minecraft 1.21.11 client on `localhost:25565`.
+The `.dev/` environment still contains older 1.21.11 server JARs. Replace them with Paper 26.3 and run all servers on Java 25 before testing this release.
 
 ---
 

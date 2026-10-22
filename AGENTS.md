@@ -53,7 +53,7 @@ Plugin installé sur chaque serveur Paper (Overworld, Nether, End).
 | `messaging/` | `PlayerStateSerializer` — sérialise/désérialise l'état complet du joueur |
 | `portal/` | `SafeLocationFinder` (trouve un spawn sûr) et `PortalBuilder` (construit un portail physique) |
 
-Version API ciblée : **Paper 1.21.11** (Java 21)
+Version API ciblée : **Paper 26.3** (Java 25)
 
 ### `dd-velocity` — Plugin Velocity (proxy)
 
@@ -301,7 +301,7 @@ La sérialisation utilise **Guava `ByteStreams`** (standard Minecraft plugin mes
 
 ## Conventions de développement
 
-- **Java 17** minimum
+- **Java 25** minimum pour construire et exécuter le plugin Paper 26.3
 - **Code propre et réutilisable** : éviter la duplication, extraire les abstractions dans `dd-common`
 - Toute logique de sérialisation/désérialisation de messages doit être dans `dd-common` (ni dans dd-paper ni dans dd-velocity en isolation)
 - Les channels de communication sont définis uniquement dans `Channels.java` (dd-common) — ne jamais hardcoder un nom de channel ailleurs
