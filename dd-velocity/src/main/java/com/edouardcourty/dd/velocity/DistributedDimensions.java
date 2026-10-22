@@ -4,6 +4,7 @@ import com.edouardcourty.dd.common.messaging.Channels;
 import com.edouardcourty.dd.velocity.handler.DimensionSwitchHandler;
 import com.edouardcourty.dd.velocity.handler.EntityTransferHandler;
 import com.edouardcourty.dd.velocity.handler.BatchedTransferHandler;
+import com.edouardcourty.dd.velocity.handler.ManualSwitchHandler;
 import com.edouardcourty.dd.velocity.listener.PlayerSessionListener;
 import com.edouardcourty.dd.velocity.store.LastServerStore;
 import com.edouardcourty.dd.velocity.util.DebugLogger;
@@ -43,6 +44,7 @@ public class DistributedDimensions {
     private EntityTransferHandler entityTransferHandler;
     private BatchedTransferHandler advancementTransferHandler;
     private BatchedTransferHandler enderChestTransferHandler;
+    private ManualSwitchHandler manualSwitchHandler;
     private DebugLogger debugLogger;
 
     @Subscribe
@@ -57,16 +59,21 @@ public class DistributedDimensions {
         server.getChannelRegistrar().register(entityTransferChannel);
         server.getChannelRegistrar().register(MinecraftChannelIdentifier.from(Channels.ADVANCEMENT_TRANSFER.toString()));
         server.getChannelRegistrar().register(MinecraftChannelIdentifier.from(Channels.ENDER_CHEST_TRANSFER.toString()));
+        server.getChannelRegistrar().register(MinecraftChannelIdentifier.from(Channels.STATE_REQUEST.toString()));
+        server.getChannelRegistrar().register(MinecraftChannelIdentifier.from(Channels.STATE_RESPONSE.toString()));
+        server.getChannelRegistrar().register(MinecraftChannelIdentifier.from(Channels.STATE_PUSH.toString()));
 
         advancementTransferHandler = new BatchedTransferHandler(Channels.ADVANCEMENT_TRANSFER);
         enderChestTransferHandler = new BatchedTransferHandler(Channels.ENDER_CHEST_TRANSFER);
         dimensionSwitchHandler = new DimensionSwitchHandler(server, serverNames,
             advancementTransferHandler, enderChestTransferHandler);
+        manualSwitchHandler = new ManualSwitchHandler(serverNames, dimensionSwitchHandler,
+            advancementTransferHandler, enderChestTransferHandler);
         entityTransferHandler = new EntityTransferHandler(server, serverNames);
 
         LastServerStore lastServerStore = new LastServerStore(dataDirectory, logger);
         server.getEventManager().register(this, new PlayerSessionListener(server, lastServerStore,
-            entityTransferHandler, advancementTransferHandler, enderChestTransferHandler));
+            entityTransferHandler, advancementTransferHandler, enderChestTransferHandler, manualSwitchHandler));
     }
 
     @Subscribe
@@ -80,6 +87,10 @@ public class DistributedDimensions {
             advancementTransferHandler.handle(event);
         } else if (event.getIdentifier().equals(MinecraftChannelIdentifier.from(Channels.ENDER_CHEST_TRANSFER.toString()))) {
             enderChestTransferHandler.handle(event);
+        } else if (event.getIdentifier().equals(MinecraftChannelIdentifier.from(Channels.STATE_RESPONSE.toString()))) {
+            manualSwitchHandler.onResponse(event, false);
+        } else if (event.getIdentifier().equals(MinecraftChannelIdentifier.from(Channels.STATE_PUSH.toString()))) {
+            manualSwitchHandler.onResponse(event, true);
         }
     }
 

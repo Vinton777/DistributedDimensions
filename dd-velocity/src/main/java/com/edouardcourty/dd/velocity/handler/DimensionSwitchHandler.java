@@ -12,7 +12,9 @@ import com.velocitypowered.api.proxy.messages.MinecraftChannelIdentifier;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 public class DimensionSwitchHandler {
@@ -20,6 +22,7 @@ public class DimensionSwitchHandler {
     private final Map<String, String> serverNames;
     private final BatchedTransferHandler advancementTransferHandler;
     private final BatchedTransferHandler enderChestTransferHandler;
+    private final Set<UUID> portalSwitches = ConcurrentHashMap.newKeySet();
 
     public DimensionSwitchHandler(ProxyServer server, Map<String, String> serverNames,
                                   BatchedTransferHandler advancementTransferHandler,
@@ -49,10 +52,12 @@ public class DimensionSwitchHandler {
         ConnectionRequestBuilder req = player.createConnectionRequest(targetServer);
         byte[] stateBytes = event.getData();
 
+        portalSwitches.add(playerUuid);
         req.connect()
             .orTimeout(5, TimeUnit.SECONDS)
-            .thenAccept(result -> {
-                if (result.getStatus() == ConnectionRequestBuilder.Status.SUCCESS) {
+            .whenComplete((result, error) -> {
+                try {
+                if (error == null && result.getStatus() == ConnectionRequestBuilder.Status.SUCCESS) {
                     player.getCurrentServer().ifPresent(conn -> {
                         enderChestTransferHandler.forward(playerUuid, conn);
                         conn.sendPluginMessage(
@@ -64,11 +69,14 @@ public class DimensionSwitchHandler {
                 } else {
                     sendSwitchFailed(event, playerUuid);
                 }
-            })
-            .exceptionally(ex -> {
-                sendSwitchFailed(event, playerUuid);
-                return null;
+                } finally {
+                    portalSwitches.remove(playerUuid);
+                }
             });
+    }
+
+    public boolean isPortalSwitch(UUID playerUuid) {
+        return portalSwitches.contains(playerUuid);
     }
 
     private void sendSwitchFailed(PluginMessageEvent event, UUID playerUuid) {

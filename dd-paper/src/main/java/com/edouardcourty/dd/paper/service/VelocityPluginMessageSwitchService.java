@@ -57,5 +57,23 @@ public class VelocityPluginMessageSwitchService implements DimensionSwitchServic
             throw ex;
         }
     }
+
+    /** Sends a fresh state-only snapshot before a manual Velocity /server switch. */
+    public void sendSnapshot(Player player, Dimension target, Channels responseChannel) {
+        var out = ByteStreams.newDataOutput();
+        org.bukkit.Location from = player.getLocation();
+        PlayerStateSerializer.write(out, player.getUniqueId(), target,
+            LocationData.of(from.getX(), from.getY(), from.getZ(), from.getYaw(), from.getPitch()),
+            player, false, true);
+        var advancements = AdvancementTransferSerializer.encode(player);
+        var enderChest = EnderChestTransferSerializer.encode(player);
+        for (byte[] batch : advancements) {
+            player.sendPluginMessage(plugin, Channels.ADVANCEMENT_TRANSFER.toString(), batch);
+        }
+        for (byte[] batch : enderChest) {
+            player.sendPluginMessage(plugin, Channels.ENDER_CHEST_TRANSFER.toString(), batch);
+        }
+        player.sendPluginMessage(plugin, responseChannel.toString(), out.toByteArray());
+    }
 }
 

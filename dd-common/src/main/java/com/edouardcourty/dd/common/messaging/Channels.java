@@ -5,6 +5,9 @@ public enum Channels {
     ENTITY_TRANSFER("dd:entity_transfer"),
     ADVANCEMENT_TRANSFER("dd:advancements"),
     ENDER_CHEST_TRANSFER("dd:ender_chest"),
+    STATE_REQUEST("dd:state_request"),
+    STATE_RESPONSE("dd:state_response"),
+    STATE_PUSH("dd:state_push"),
     SWITCH_FAILED("dd:switch_failed");
 
     private final String channel;

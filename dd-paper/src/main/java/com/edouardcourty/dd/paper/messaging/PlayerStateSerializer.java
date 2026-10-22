@@ -3,6 +3,7 @@ package com.edouardcourty.dd.paper.messaging;
 import com.edouardcourty.dd.common.model.Dimension;
 import com.edouardcourty.dd.common.model.LocationData;
 import com.edouardcourty.dd.paper.util.ItemSerializer;
+import com.edouardcourty.dd.paper.store.SpawnPointStore;
 import com.google.common.io.ByteArrayDataInput;
 import com.google.common.io.ByteArrayDataOutput;
 import org.bukkit.GameMode;
@@ -32,7 +33,8 @@ import java.util.UUID;
  *   gameMode (UTF),
  *   inventory contents, armor contents, offhand item,
  *   buildPortal, potion effects, vehicle, selected hotbar slot,
- *   hasVitals (boolean) → [health, base max health, absorption (double)]
+ *   hasVitals (boolean) → [health, base max health, absorption (double)],
+ *   stateOnly (boolean), cross-server spawn point (UTF)
  *   The final fields are optional when reading older messages.
  *
  * Format d'un item : int length (0 = vide/AIR), puis bytes si non vide.
@@ -59,12 +61,19 @@ public class PlayerStateSerializer {
         double health,
         double maxHealthBase,
         double absorption,
+        boolean stateOnly,
+        String spawnPoint,
         boolean buildPortal,
         EntityTransferSerializer.EntityData vehicle,  // null si le joueur n'est pas dans un véhicule
         List<PotionEffect> potionEffects
     ) {}
 
     public static void write(ByteArrayDataOutput out, UUID playerUuid, Dimension target, LocationData dest, Player player, boolean buildPortal) {
+        write(out, playerUuid, target, dest, player, buildPortal, false);
+    }
+
+    public static void write(ByteArrayDataOutput out, UUID playerUuid, Dimension target, LocationData dest,
+                             Player player, boolean buildPortal, boolean stateOnly) {
         out.writeUTF(playerUuid.toString());
         out.writeUTF(target.name());
         out.writeDouble(dest.x);
@@ -99,7 +108,7 @@ public class PlayerStateSerializer {
 
         // Véhicule optionnel
         org.bukkit.entity.Entity vehicle = player.getVehicle();
-        if (vehicle != null) {
+        if (vehicle != null && !stateOnly) {
             out.writeBoolean(true);
             EntityTransferSerializer.writeRoot(out, vehicle, target, dest.x, dest.y, dest.z);
         } else {
@@ -116,6 +125,8 @@ public class PlayerStateSerializer {
             out.writeDouble(maxHealth == null ? player.getMaxHealth() : maxHealth.getBaseValue());
             out.writeDouble(player.getAbsorptionAmount());
         }
+        out.writeBoolean(stateOnly);
+        out.writeUTF(SpawnPointStore.raw(player));
     }
 
     public static PlayerState read(ByteArrayDataInput in) {
@@ -170,6 +181,16 @@ public class PlayerStateSerializer {
             maxHealthBase = in.readDouble();
             absorption = in.readDouble();
         }
+        boolean stateOnly = false;
+        String spawnPoint = null;
+        boolean hasExtendedState = false;
+        try {
+            stateOnly = in.readBoolean();
+            hasExtendedState = true;
+        } catch (IllegalStateException ex) {
+            if (!(ex.getCause() instanceof EOFException)) throw ex;
+        }
+        if (hasExtendedState) spawnPoint = in.readUTF();
 
         return new PlayerState(
             playerUuid, dimension,
@@ -177,9 +198,11 @@ public class PlayerStateSerializer {
             xpLevel, xpProgress,
             foodLevel, saturation, exhaustion,
             gameMode, contents, armor, offhand, selectedHotbarSlot,
-            hasVitals, health, maxHealthBase, absorption, buildPortal, vehicle, potionEffects
+            hasVitals, health, maxHealthBase, absorption, stateOnly, spawnPoint,
+            buildPortal, vehicle, potionEffects
         );
     }
+
 
     private static void writeItemArray(ByteArrayDataOutput out, ItemStack[] items) {
         out.writeInt(items.length);

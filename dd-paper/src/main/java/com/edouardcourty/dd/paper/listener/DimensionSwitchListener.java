@@ -7,6 +7,7 @@ import com.edouardcourty.dd.common.model.PortalConstants;
 import com.edouardcourty.dd.paper.messaging.PlayerStateSerializer;
 import com.edouardcourty.dd.paper.portal.SafeLocationFinder;
 import com.edouardcourty.dd.paper.store.PrePortalPositionStore;
+import com.edouardcourty.dd.paper.store.SpawnPointStore;
 import com.google.common.io.ByteStreams;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -35,6 +36,13 @@ public class DimensionSwitchListener implements PluginMessageListener {
             plugin.getLogger().warning("[DimensionSwitch] Player " + state.playerUuid() + " is not online; state not applied.");
             return;
         }
+        if (state.spawnPoint() != null) SpawnPointStore.applyRaw(player, state.spawnPoint());
+        if (state.stateOnly()) {
+            positionStore.clear(state.playerUuid());
+            applyState(player, state);
+            player.saveData();
+            return;
+        }
 
         World world = plugin.getServer().getWorld(state.targetDimension().toBukkitWorldName());
         if (world == null) {
@@ -57,10 +65,15 @@ public class DimensionSwitchListener implements PluginMessageListener {
                 state.location().x, state.location().y, state.location().z,
                 state.location().yaw, state.location().pitch);
         } else {
-            // Pour un respawn (mort cross-serveur) : utiliser le point de respawn connu de CE serveur
+            // Respawn or End exit: prefer the synchronized bed/anchor on this server.
+            SpawnPointStore.Point savedSpawn = SpawnPointStore.get(player);
             Location respawn = player.getRespawnLocation();
-            if (respawn != null && world.equals(respawn.getWorld())) {
-                target = respawn;
+            if (savedSpawn != null && savedSpawn.dimension() == state.targetDimension()) {
+                var point = savedSpawn.location();
+                target = SafeLocationFinder.findNear(world, point.x, point.y, point.z, point.yaw, point.pitch);
+            } else if (respawn != null && world.equals(respawn.getWorld())) {
+                target = SafeLocationFinder.findNear(world, respawn.getX(), respawn.getY(), respawn.getZ(),
+                    respawn.getYaw(), respawn.getPitch());
             } else {
                 target = SafeLocationFinder.findOnly(
                     world,

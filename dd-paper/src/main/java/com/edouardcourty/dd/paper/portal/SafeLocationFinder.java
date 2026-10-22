@@ -98,6 +98,24 @@ public class SafeLocationFinder {
         return new Location(world, ix + 0.5, y + 1, iz + 0.5, yaw, pitch);
     }
 
+    /** Finds standing room close to a bed or respawn anchor at its actual height. */
+    public static Location findNear(World world, double x, double y, double z, float yaw, float pitch) {
+        int ix = (int) Math.floor(x), iy = (int) Math.floor(y), iz = (int) Math.floor(z);
+        for (int[] offset : spiral(4)) {
+            for (int dy : new int[]{0, 1, -1, 2, -2}) {
+                int feetY = iy + dy;
+                if (feetY <= world.getMinHeight() || feetY + 1 >= world.getMaxHeight()) continue;
+                int px = ix + offset[0], pz = iz + offset[1];
+                if (world.getBlockAt(px, feetY - 1, pz).getType().isSolid()
+                    && SAFE_AIR.contains(world.getBlockAt(px, feetY, pz).getType())
+                    && SAFE_AIR.contains(world.getBlockAt(px, feetY + 1, pz).getType())) {
+                    return new Location(world, px + 0.5, feetY, pz + 0.5, yaw, pitch);
+                }
+            }
+        }
+        return findOnly(world, x, y, z, yaw, pitch);
+    }
+
     // Cherche un bloc NETHER_PORTAL existant dans un rayon en spirale, retourne l'intérieur bas du portail
     private static Location findExistingPortal(World world, int ix, int iz, int radius, int maxY, float yaw, float pitch) {
         for (int[] offset : spiral(radius)) {

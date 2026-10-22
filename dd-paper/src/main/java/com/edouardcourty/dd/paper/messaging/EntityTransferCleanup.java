@@ -3,6 +3,11 @@ package com.edouardcourty.dd.paper.messaging;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Wolf;
+import org.bukkit.entity.AbstractHorse;
+import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.Material;
 import org.bukkit.inventory.InventoryHolder;
 
 import java.util.List;
@@ -21,6 +26,9 @@ public final class EntityTransferCleanup {
             holder.getInventory().clear();
         }
         if (entity instanceof LivingEntity living && living.getEquipment() != null) {
+            if (entity instanceof Wolf || entity instanceof AbstractHorse) {
+                living.getEquipment().setItem(EquipmentSlot.BODY, new ItemStack(Material.AIR));
+            }
             living.getEquipment().clear();
         }
         entity.remove();

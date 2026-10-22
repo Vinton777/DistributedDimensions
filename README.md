@@ -13,7 +13,7 @@ A Minecraft plugin system that splits a world across **one Paper server per dime
   (dd-paper)  (dd-paper) (dd-paper)
 ```
 
-Crossing a portal transfers player inventory, ender chest, HP, XP, hunger, gamemode, and advancement progress between servers. Tamed mobs keep their owner. Chat stays local to each server.
+Crossing a portal or using `/server` transfers player inventory, ender chest, HP, XP, hunger, gamemode, and advancement progress between servers. Tamed mobs keep their owner. Villager reputation, horse attributes, and body armor transfer with entities. Chat stays local to each server.
 
 ---
 
@@ -25,6 +25,7 @@ Crossing a portal transfers player inventory, ender chest, HP, XP, hunger, gamem
 4. The target server deserializes the state, finds a safe spawn location (or builds a portal), and teleports the player
 
 Nether coordinate scaling (1:8 ratio) and End platform spawning are handled automatically.
+The selected bed or respawn anchor is synchronized across dimensions. A graceful Paper shutdown sends a final player snapshot to Velocity for a later fallback connection while the proxy remains online.
 
 ---
 
@@ -184,6 +185,6 @@ end       = "end"
 ## Roadmap
 
 - Potion effects not transferred on dimension switch
-- Player data is in-memory only (reset on server reload)
+- Abrupt backend termination cannot send a final player snapshot; graceful shutdown requires a running Velocity proxy
 - No timeout handling when target server is offline
 - No payload validation on received plugin messages

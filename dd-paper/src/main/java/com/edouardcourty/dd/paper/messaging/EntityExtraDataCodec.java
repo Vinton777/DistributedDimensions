@@ -2,6 +2,9 @@ package com.edouardcourty.dd.paper.messaging;
 
 import org.bukkit.DyeColor;
 import org.bukkit.Bukkit;
+import org.bukkit.Registry;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.*;
 
 import java.util.HashMap;
@@ -62,6 +65,7 @@ public final class EntityExtraDataCodec {
         if (entity instanceof Wolf wolf) {
             map.put("collarColor", wolf.getCollarColor().name());
             map.put("angry", String.valueOf(wolf.isAngry()));
+            map.put("wolfVariant", wolf.getVariant().getKey().toString());
         }
         if (entity instanceof Fox fox) {
             map.put("foxType", fox.getFoxType().name());
@@ -96,6 +100,11 @@ public final class EntityExtraDataCodec {
         }
         if (entity instanceof FallingBlock fb) {
             map.put("fallingBlockType", fb.getBlockData().getAsString());
+        }
+        if (entity instanceof LivingEntity living) {
+            saveAttribute(map, living, Attribute.MAX_HEALTH, "baseMaxHealth");
+            saveAttribute(map, living, Attribute.MOVEMENT_SPEED, "baseMovementSpeed");
+            saveAttribute(map, living, Attribute.JUMP_STRENGTH, "baseJumpStrength");
         }
 
         if (map.isEmpty()) return "";
@@ -164,6 +173,9 @@ public final class EntityExtraDataCodec {
         if (entity instanceof Wolf wolf) {
             if (map.containsKey("collarColor")) wolf.setCollarColor(DyeColor.valueOf(map.get("collarColor")));
             if (map.containsKey("angry")) wolf.setAngry("true".equals(map.get("angry")));
+            if (map.containsKey("wolfVariant")) Registry.WOLF_VARIANT.stream()
+                .filter(v -> v.getKey().toString().equals(map.get("wolfVariant")))
+                .findFirst().ifPresent(wolf::setVariant);
         }
         if (entity instanceof Fox fox && map.containsKey("foxType")) {
             fox.setFoxType(Fox.Type.valueOf(map.get("foxType")));
@@ -199,5 +211,21 @@ public final class EntityExtraDataCodec {
         if (entity instanceof MushroomCow mooshroom && map.containsKey("mushroomVariant")) {
             mooshroom.setVariant(MushroomCow.Variant.valueOf(map.get("mushroomVariant")));
         }
+        if (entity instanceof LivingEntity living) {
+            restoreAttribute(map, living, Attribute.MAX_HEALTH, "baseMaxHealth");
+            restoreAttribute(map, living, Attribute.MOVEMENT_SPEED, "baseMovementSpeed");
+            restoreAttribute(map, living, Attribute.JUMP_STRENGTH, "baseJumpStrength");
+        }
+    }
+
+    private static void saveAttribute(Map<String, String> map, LivingEntity living, Attribute attribute, String key) {
+        AttributeInstance instance = living.getAttribute(attribute);
+        if (instance != null) map.put(key, Double.toString(instance.getBaseValue()));
+    }
+
+    private static void restoreAttribute(Map<String, String> map, LivingEntity living, Attribute attribute, String key) {
+        if (!map.containsKey(key)) return;
+        AttributeInstance instance = living.getAttribute(attribute);
+        if (instance != null) instance.setBaseValue(Double.parseDouble(map.get(key)));
     }
 }

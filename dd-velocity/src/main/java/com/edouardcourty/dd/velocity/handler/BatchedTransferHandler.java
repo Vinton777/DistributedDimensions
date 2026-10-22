@@ -14,7 +14,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /** Holds a player's batches until the destination server connection is ready. */
 public final class BatchedTransferHandler {
-    private static final long EXPIRY_MS = 60_000;
+    // Shutdown snapshots can be delivered after a player reconnects to another backend.
+    private static final long EXPIRY_MS = 10 * 60_000;
     private final Map<UUID, Pending> pending = new ConcurrentHashMap<>();
     private final MinecraftChannelIdentifier channel;
 

@@ -8,6 +8,7 @@ import org.bukkit.entity.*;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.EntityEquipment;
+import org.bukkit.inventory.EquipmentSlot;
 
 import java.util.Map;
 
@@ -39,11 +40,6 @@ public final class EntitySpawner {
             entity.setCustomNameVisible(true);
         }
 
-        if (entity instanceof LivingEntity living && data.health() > 0) {
-            living.setMaxHealth(data.maxHealth());
-            living.setHealth(Math.min(data.health(), data.maxHealth()));
-        }
-
         if (entity instanceof Item item && data.itemData() != null) {
             item.setItemStack(ItemStack.deserializeBytes(data.itemData()));
         }
@@ -67,6 +63,9 @@ public final class EntitySpawner {
                 equipment.setLeggingsDropChance(chances[3]);
                 equipment.setChestplateDropChance(chances[4]);
                 equipment.setHelmetDropChance(chances[5]);
+                if (saved.body() != null && (entity instanceof Wolf || entity instanceof AbstractHorse)) {
+                    equipment.setItem(EquipmentSlot.BODY, saved.body());
+                }
             }
         }
         if (entity instanceof Villager villager && data.villager() != null) {
@@ -74,6 +73,14 @@ public final class EntitySpawner {
             villager.setVillagerExperience(saved.experience());
             villager.setRestocksToday(saved.restocksToday());
             villager.setRecipes(saved.recipes());
+            if (!saved.reputations().isEmpty()) villager.setReputations(saved.reputations());
+        }
+        if (entity instanceof LivingEntity living && data.health() > 0) {
+            // V2 had no base attribute data; retain its max-health fallback.
+            if (!EntityExtraDataCodec.parse(data.extraData()).containsKey("baseMaxHealth")) {
+                living.setMaxHealth(data.maxHealth());
+            }
+            living.setHealth(Math.min(data.health(), living.getMaxHealth()));
         }
         entity.setPortalCooldown(PortalConstants.PORTAL_COOLDOWN_TICKS);
 

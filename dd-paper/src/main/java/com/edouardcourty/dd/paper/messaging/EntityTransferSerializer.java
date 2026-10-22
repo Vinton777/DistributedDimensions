@@ -11,31 +11,38 @@ import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.MerchantRecipe;
+import org.bukkit.inventory.EquipmentSlot;
+import com.destroystokyo.paper.entity.villager.Reputation;
+import com.destroystokyo.paper.entity.villager.ReputationType;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.UUID;
 
 /**
  * Sérialise/désérialise une entité non-joueur pour le transfert cross-serveur.
  *
  * Format (récursif pour les passagers) :
  *   targetDimension (UTF), destX/Y/Z (double)
- *   DD_ENTITY_V2 marker (UTF), entityType (UTF), vx/vy/vz (double),
+ *   DD_ENTITY_V3 marker (UTF), entityType (UTF), vx/vy/vz (double),
  *   customName (UTF, "null" si absent), fireTicks (int)
  *   hasItemData (boolean) → [itemBytes.length (int) + bytes]
  *   health (float, -1 si non-LivingEntity), maxHealth (float)
  *   hasChestInventory (boolean) → [item array]
  *   extraData (UTF, clés=valeur séparées par ';') — couleur, âge, taille, etc.
- *   equipment (boolean) → [hands, armor, drop chances]
- *   villager (boolean) → [experience, restocks, recipes]
+ *   equipment (boolean) → [hands, armor, drop chances, body armor]
+ *   villager (boolean) → [experience, restocks, recipes, reputations]
  *   passengerCount (int) → [passengers récursifs sans dimension/dest]
- * Legacy messages without the marker remain readable.
+ * Legacy messages without the marker and V2 messages remain readable.
  *
  * Spawn : {@link EntitySpawner}
  * Attributs spécifiques : {@link EntityExtraDataCodec}
  */
 public class EntityTransferSerializer {
     private static final String VERSION_2_MARKER = "DD_ENTITY_V2";
+    private static final String VERSION_3_MARKER = "DD_ENTITY_V3";
 
     private EntityTransferSerializer() {}
 
@@ -56,10 +63,11 @@ public class EntityTransferSerializer {
         List<EntityData> passengers
     ) {}
 
-    public record EquipmentData(ItemStack mainHand, ItemStack offHand, ItemStack[] armor,
+    public record EquipmentData(ItemStack mainHand, ItemStack offHand, ItemStack[] armor, ItemStack body,
                                 float[] dropChances) {}
 
-    public record VillagerData(int experience, int restocksToday, List<MerchantRecipe> recipes) {}
+    public record VillagerData(int experience, int restocksToday, List<MerchantRecipe> recipes,
+                               Map<UUID, Reputation> reputations) {}
 
     // ── Écriture ─────────────────────────────────────────────────────────────
 
@@ -68,7 +76,7 @@ public class EntityTransferSerializer {
         out.writeDouble(destX);
         out.writeDouble(destY);
         out.writeDouble(destZ);
-        out.writeUTF(VERSION_2_MARKER);
+        out.writeUTF(VERSION_3_MARKER);
         writeEntity(out, entity);
     }
 
@@ -126,6 +134,7 @@ public class EntityTransferSerializer {
             out.writeFloat(equipment.getLeggingsDropChance());
             out.writeFloat(equipment.getChestplateDropChance());
             out.writeFloat(equipment.getHelmetDropChance());
+            ItemSerializer.write(out, supportsBodyEquipment(entity) ? equipment.getItem(EquipmentSlot.BODY) : null);
         }
 
         out.writeBoolean(entity instanceof Villager);
@@ -135,6 +144,16 @@ public class EntityTransferSerializer {
             List<MerchantRecipe> recipes = villager.getRecipes();
             out.writeInt(recipes.size());
             for (MerchantRecipe recipe : recipes) writeRecipe(out, recipe);
+            Map<UUID, Reputation> reputations = villager.getReputations();
+            out.writeInt(reputations.size());
+            for (var entry : reputations.entrySet()) {
+                out.writeUTF(entry.getKey().toString());
+                for (ReputationType type : ReputationType.values()) {
+                    boolean present = entry.getValue().hasReputationSet(type);
+                    out.writeBoolean(present);
+                    if (present) out.writeInt(entry.getValue().getReputation(type));
+                }
+            }
         }
 
         // Players are transferred through PlayerStateSerializer, not spawned as entities.
@@ -151,12 +170,12 @@ public class EntityTransferSerializer {
         Dimension target = Dimension.valueOf(in.readUTF());
         double destX = in.readDouble(), destY = in.readDouble(), destZ = in.readDouble();
         String first = in.readUTF();
-        boolean version2 = VERSION_2_MARKER.equals(first);
-        return readEntity(in, target, destX, destY, destZ, version2, version2 ? null : first);
+        int version = VERSION_3_MARKER.equals(first) ? 3 : VERSION_2_MARKER.equals(first) ? 2 : 1;
+        return readEntity(in, target, destX, destY, destZ, version, version > 1 ? null : first);
     }
 
     private static EntityData readEntity(ByteArrayDataInput in, Dimension target, double destX, double destY, double destZ,
-                                         boolean version2, String knownType) {
+                                         int version, String knownType) {
         String type       = knownType != null ? knownType : in.readUTF();
         double vx = in.readDouble(), vy = in.readDouble(), vz = in.readDouble();
         String rawName    = in.readUTF();
@@ -183,7 +202,7 @@ public class EntityTransferSerializer {
 
         EquipmentData equipment = null;
         VillagerData villager = null;
-        if (version2) {
+        if (version >= 2) {
             if (in.readBoolean()) {
                 ItemStack mainHand = ItemSerializer.read(in);
                 ItemStack offHand = ItemSerializer.read(in);
@@ -191,7 +210,8 @@ public class EntityTransferSerializer {
                 for (int i = 0; i < armor.length; i++) armor[i] = ItemSerializer.read(in);
                 float[] chances = new float[6];
                 for (int i = 0; i < chances.length; i++) chances[i] = in.readFloat();
-                equipment = new EquipmentData(mainHand, offHand, armor, chances);
+                ItemStack body = version >= 3 ? ItemSerializer.read(in) : null;
+                equipment = new EquipmentData(mainHand, offHand, armor, body, chances);
             }
             if (in.readBoolean()) {
                 int experience = in.readInt();
@@ -199,18 +219,34 @@ public class EntityTransferSerializer {
                 int recipeCount = in.readInt();
                 List<MerchantRecipe> recipes = new ArrayList<>(recipeCount);
                 for (int i = 0; i < recipeCount; i++) recipes.add(readRecipe(in));
-                villager = new VillagerData(experience, restocksToday, recipes);
+                Map<UUID, Reputation> reputations = new HashMap<>();
+                if (version >= 3) {
+                    int reputationCount = in.readInt();
+                    for (int i = 0; i < reputationCount; i++) {
+                        UUID uuid = UUID.fromString(in.readUTF());
+                        Reputation reputation = new Reputation();
+                        for (ReputationType reputationType : ReputationType.values()) {
+                            if (in.readBoolean()) reputation.setReputation(reputationType, in.readInt());
+                        }
+                        reputations.put(uuid, reputation);
+                    }
+                }
+                villager = new VillagerData(experience, restocksToday, recipes, reputations);
             }
         }
 
         int passengerCount = in.readInt();
         List<EntityData> passengers = new ArrayList<>(passengerCount);
         for (int i = 0; i < passengerCount; i++) {
-            passengers.add(readEntity(in, target, destX, destY, destZ, version2, null));
+            passengers.add(readEntity(in, target, destX, destY, destZ, version, null));
         }
 
         return new EntityData(target, destX, destY, destZ, type, vx, vy, vz, customName,
             fireTicks, itemData, health, maxHealth, chestContents, extraData, equipment, villager, passengers);
+    }
+
+    private static boolean supportsBodyEquipment(Entity entity) {
+        return entity instanceof Wolf || entity instanceof AbstractHorse;
     }
 
     private static void writeRecipe(ByteArrayDataOutput out, MerchantRecipe recipe) {
