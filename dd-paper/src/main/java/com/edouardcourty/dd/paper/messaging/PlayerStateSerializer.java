@@ -8,6 +8,7 @@ import com.google.common.io.ByteArrayDataOutput;
 import org.bukkit.GameMode;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
@@ -30,7 +31,9 @@ import java.util.UUID;
  *   foodLevel (int), saturation (float), exhaustion (float),
  *   gameMode (UTF),
  *   inventory contents, armor contents, offhand item,
- *   buildPortal, potion effects, vehicle, selected hotbar slot (int, optional for old saves)
+ *   buildPortal, potion effects, vehicle, selected hotbar slot,
+ *   hasVitals (boolean) → [health, base max health, absorption (double)]
+ *   The final fields are optional when reading older messages.
  *
  * Format d'un item : int length (0 = vide/AIR), puis bytes si non vide.
  */
@@ -52,6 +55,10 @@ public class PlayerStateSerializer {
         ItemStack[] armorContents,
         ItemStack offhand,
         int selectedHotbarSlot,
+        boolean hasVitals,
+        double health,
+        double maxHealthBase,
+        double absorption,
         boolean buildPortal,
         EntityTransferSerializer.EntityData vehicle,  // null si le joueur n'est pas dans un véhicule
         List<PotionEffect> potionEffects
@@ -101,6 +108,14 @@ public class PlayerStateSerializer {
 
         // Appended so older persisted player states can still be restored.
         out.writeInt(inv.getHeldItemSlot());
+        boolean hasVitals = !player.isDead() && player.getHealth() > 0;
+        out.writeBoolean(hasVitals);
+        if (hasVitals) {
+            out.writeDouble(player.getHealth());
+            var maxHealth = player.getAttribute(Attribute.MAX_HEALTH);
+            out.writeDouble(maxHealth == null ? player.getMaxHealth() : maxHealth.getBaseValue());
+            out.writeDouble(player.getAbsorptionAmount());
+        }
     }
 
     public static PlayerState read(ByteArrayDataInput in) {
@@ -138,10 +153,22 @@ public class PlayerStateSerializer {
             : null;
 
         int selectedHotbarSlot = 0;
+        boolean hasVitals = false;
+        double health = 0, maxHealthBase = 0, absorption = 0;
         try {
             selectedHotbarSlot = in.readInt();
         } catch (IllegalStateException ex) {
             if (!(ex.getCause() instanceof EOFException)) throw ex;
+        }
+        try {
+            hasVitals = in.readBoolean();
+        } catch (IllegalStateException ex) {
+            if (!(ex.getCause() instanceof EOFException)) throw ex;
+        }
+        if (hasVitals) {
+            health = in.readDouble();
+            maxHealthBase = in.readDouble();
+            absorption = in.readDouble();
         }
 
         return new PlayerState(
@@ -149,7 +176,8 @@ public class PlayerStateSerializer {
             LocationData.of(x, y, z, yaw, pitch),
             xpLevel, xpProgress,
             foodLevel, saturation, exhaustion,
-            gameMode, contents, armor, offhand, selectedHotbarSlot, buildPortal, vehicle, potionEffects
+            gameMode, contents, armor, offhand, selectedHotbarSlot,
+            hasVitals, health, maxHealthBase, absorption, buildPortal, vehicle, potionEffects
         );
     }
 

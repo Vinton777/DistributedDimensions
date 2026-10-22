@@ -9,7 +9,7 @@ DistributedDimensions est un système de plugins Minecraft qui divise un monde e
 
 Le tout est piloté par un **proxy Velocity** qui orchestre les transitions entre serveurs.
 
-L'objectif est une expérience **seamless** pour le joueur : les portails sont liés par coordonnées et l'inventaire, l'XP, le gamemode et les progrès des advancements sont transférés entre serveurs. Le chat reste local à chaque serveur.
+L'objectif est une expérience **seamless** pour le joueur : les portails sont liés par coordonnées et l'inventaire, les HP, l'XP, le gamemode et les progrès des advancements sont transférés entre serveurs. Le chat reste local à chaque serveur.
 
 ---
 

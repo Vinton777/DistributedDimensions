@@ -10,6 +10,7 @@ import com.edouardcourty.dd.paper.store.PrePortalPositionStore;
 import com.google.common.io.ByteStreams;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.plugin.messaging.PluginMessageListener;
@@ -102,6 +103,13 @@ public class DimensionSwitchListener implements PluginMessageListener {
         player.setGameMode(state.gameMode());
         player.clearActivePotionEffects();
         state.potionEffects().forEach(player::addPotionEffect);
+        if (state.hasVitals() && state.maxHealthBase() > 0) {
+            var maxHealth = player.getAttribute(Attribute.MAX_HEALTH);
+            if (maxHealth != null) maxHealth.setBaseValue(state.maxHealthBase());
+            double effectiveMax = maxHealth == null ? player.getMaxHealth() : maxHealth.getValue();
+            if (effectiveMax > 0) player.setHealth(Math.max(0.001, Math.min(state.health(), effectiveMax)));
+            player.setAbsorptionAmount(Math.max(0, state.absorption()));
+        }
     }
 }
 
