@@ -4,6 +4,7 @@ import com.edouardcourty.dd.common.messaging.Channels;
 import com.edouardcourty.dd.common.model.Dimension;
 import com.edouardcourty.dd.common.service.DimensionSwitchService;
 import com.edouardcourty.dd.paper.listener.DimensionGuardListener;
+import com.edouardcourty.dd.paper.listener.AdvancementTransferListener;
 import com.edouardcourty.dd.paper.listener.DimensionSwitchListener;
 import com.edouardcourty.dd.paper.listener.EndPortalListener;
 import com.edouardcourty.dd.paper.listener.EntityPortalListener;
@@ -36,6 +37,11 @@ public class DistributedDimensions extends JavaPlugin {
 
         getServer().getMessenger().registerOutgoingPluginChannel(this, Channels.ENTITY_TRANSFER.toString());
         getServer().getMessenger().registerIncomingPluginChannel(this, Channels.ENTITY_TRANSFER.toString(), new EntitySpawnListener(this));
+
+        getServer().getMessenger().registerOutgoingPluginChannel(this, Channels.ADVANCEMENT_TRANSFER.toString());
+        AdvancementTransferListener advancementListener = new AdvancementTransferListener(this);
+        getServer().getMessenger().registerIncomingPluginChannel(this, Channels.ADVANCEMENT_TRANSFER.toString(), advancementListener);
+        getServer().getPluginManager().registerEvents(advancementListener, this);
 
         getServer().getMessenger().registerIncomingPluginChannel(this, Channels.SWITCH_FAILED.toString(), new SwitchFailedListener(this, positionStore, pendingVehicleStore));
         getServer().getPluginManager().registerEvents(pendingVehicleStore, this);

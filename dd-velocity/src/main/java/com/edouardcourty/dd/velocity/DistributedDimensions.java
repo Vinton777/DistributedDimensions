@@ -3,6 +3,7 @@ package com.edouardcourty.dd.velocity;
 import com.edouardcourty.dd.common.messaging.Channels;
 import com.edouardcourty.dd.velocity.handler.DimensionSwitchHandler;
 import com.edouardcourty.dd.velocity.handler.EntityTransferHandler;
+import com.edouardcourty.dd.velocity.handler.AdvancementTransferHandler;
 import com.edouardcourty.dd.velocity.listener.PlayerSessionListener;
 import com.edouardcourty.dd.velocity.store.LastServerStore;
 import com.edouardcourty.dd.velocity.util.DebugLogger;
@@ -40,6 +41,7 @@ public class DistributedDimensions {
     private ChannelIdentifier entityTransferChannel;
     private DimensionSwitchHandler dimensionSwitchHandler;
     private EntityTransferHandler entityTransferHandler;
+    private AdvancementTransferHandler advancementTransferHandler;
     private DebugLogger debugLogger;
 
     @Subscribe
@@ -52,12 +54,15 @@ public class DistributedDimensions {
         entityTransferChannel = MinecraftChannelIdentifier.from(Channels.ENTITY_TRANSFER.toString());
         server.getChannelRegistrar().register(dimSwitchChannel);
         server.getChannelRegistrar().register(entityTransferChannel);
+        server.getChannelRegistrar().register(MinecraftChannelIdentifier.from(Channels.ADVANCEMENT_TRANSFER.toString()));
 
-        dimensionSwitchHandler = new DimensionSwitchHandler(server, serverNames);
+        advancementTransferHandler = new AdvancementTransferHandler();
+        dimensionSwitchHandler = new DimensionSwitchHandler(server, serverNames, advancementTransferHandler);
         entityTransferHandler = new EntityTransferHandler(server, serverNames);
 
         LastServerStore lastServerStore = new LastServerStore(dataDirectory, logger);
-        server.getEventManager().register(this, new PlayerSessionListener(server, lastServerStore, entityTransferHandler));
+        server.getEventManager().register(this, new PlayerSessionListener(server, lastServerStore,
+            entityTransferHandler, advancementTransferHandler));
     }
 
     @Subscribe
@@ -67,6 +72,8 @@ public class DistributedDimensions {
             dimensionSwitchHandler.handle(event);
         } else if (event.getIdentifier().equals(entityTransferChannel)) {
             entityTransferHandler.handle(event);
+        } else if (event.getIdentifier().equals(MinecraftChannelIdentifier.from(Channels.ADVANCEMENT_TRANSFER.toString()))) {
+            advancementTransferHandler.handle(event);
         }
     }
 

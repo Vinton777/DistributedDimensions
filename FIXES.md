@@ -8,10 +8,11 @@ The changes are preserved as successive tags in this fork. Earlier tags document
 | `codex-fix-v2` | Transfer and restore the selected hotbar slot. | Superseded |
 | `codex-fix-v3` | Stop replaying stale player snapshots; apply player state by UUID; remove source vehicles with rollback on a failed switch. | Superseded |
 | `codex-fix-v4` | Route ridden vehicles through the player's switch and ignore legacy PLAYER passenger payloads. | Superseded |
-| `codex-fix-v5` | Transfer mob and allay equipment, villager trades and progress; remove proxy-wide chat and plugin join/quit messages. | Current |
+| `codex-fix-v5` | Transfer mob and allay equipment, villager trades and progress; remove proxy-wide chat and plugin join/quit messages. | Superseded |
+| `codex-fix-v6` | Preserve tameable owner UUIDs and merge awarded advancement criteria across servers in bounded batches. | Current |
 
 ## Install
 
-Build with Java 21 and Maven (`mvn clean package`), or download both JARs from the latest `codex-fix-v5` release. Replace the old plugin JAR on **every** Paper/Purpur server and on Velocity. Remove old copies from each `plugins/` directory before restarting. The old Velocity `player-states/` snapshots are no longer read; they are left on disk for manual backup or removal.
+Build with Java 21 and Maven (`mvn clean package`), or download both JARs from the latest `codex-fix-v6` release. Replace the old plugin JAR on **every** Paper/Purpur server and on Velocity. Remove old copies from each `plugins/` directory before restarting. The old Velocity `player-states/` snapshots are no longer read; they are left on disk for manual backup or removal.
 
-The build was verified with Maven. Cross-server behavior still needs testing on a running network, especially allay hand items, equipped mobs, villager trade uses after a transfer, a failed switch, reconnect after dropping items, and an ordinary restart.
+The build was verified with Maven. Cross-server behavior still needs testing on a running network, especially tamed mobs with offline owners, partially completed advancements, advancement progress after travelling back, and an ordinary restart.

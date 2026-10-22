@@ -1,11 +1,13 @@
 package com.edouardcourty.dd.paper.messaging;
 
 import org.bukkit.DyeColor;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.*;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * Sérialise et désérialise les attributs spécifiques d'une entité sous forme de chaîne "key=val;...".
@@ -25,6 +27,8 @@ public final class EntityExtraDataCodec {
         }
         if (entity instanceof Tameable tameable) {
             map.put("tamed", String.valueOf(tameable.isTamed()));
+            UUID owner = tameable.getOwnerUniqueId();
+            if (owner != null) map.put("ownerUuid", owner.toString());
         }
         if (entity instanceof Sittable sittable) {
             map.put("sitting", String.valueOf(sittable.isSitting()));
@@ -124,6 +128,9 @@ public final class EntityExtraDataCodec {
         }
         if (entity instanceof Tameable tameable && map.containsKey("tamed")) {
             tameable.setTamed("true".equals(map.get("tamed")));
+            if (map.containsKey("ownerUuid")) {
+                tameable.setOwner(Bukkit.getOfflinePlayer(UUID.fromString(map.get("ownerUuid"))));
+            }
         }
         if (entity instanceof Sittable sittable && map.containsKey("sitting")) {
             sittable.setSitting("true".equals(map.get("sitting")));

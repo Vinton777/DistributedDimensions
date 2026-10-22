@@ -18,10 +18,13 @@ import java.util.concurrent.TimeUnit;
 public class DimensionSwitchHandler {
     private final ProxyServer server;
     private final Map<String, String> serverNames;
+    private final AdvancementTransferHandler advancementTransferHandler;
 
-    public DimensionSwitchHandler(ProxyServer server, Map<String, String> serverNames) {
+    public DimensionSwitchHandler(ProxyServer server, Map<String, String> serverNames,
+                                  AdvancementTransferHandler advancementTransferHandler) {
         this.server = server;
         this.serverNames = serverNames;
+        this.advancementTransferHandler = advancementTransferHandler;
     }
 
     public void handle(PluginMessageEvent event) {
@@ -47,12 +50,13 @@ public class DimensionSwitchHandler {
             .orTimeout(5, TimeUnit.SECONDS)
             .thenAccept(result -> {
                 if (result.getStatus() == ConnectionRequestBuilder.Status.SUCCESS) {
-                    player.getCurrentServer().ifPresent(conn ->
+                    player.getCurrentServer().ifPresent(conn -> {
                         conn.sendPluginMessage(
                             MinecraftChannelIdentifier.from(Channels.DIM_SWITCH.toString()),
                             stateBytes
-                        )
-                    );
+                        );
+                        advancementTransferHandler.forward(playerUuid, conn);
+                    });
                 } else {
                     sendSwitchFailed(event, playerUuid);
                 }
@@ -64,6 +68,7 @@ public class DimensionSwitchHandler {
     }
 
     private void sendSwitchFailed(PluginMessageEvent event, UUID playerUuid) {
+        advancementTransferHandler.discard(playerUuid);
         if (!(event.getSource() instanceof ServerConnection sourceConn)) return;
         var out = ByteStreams.newDataOutput();
         out.writeUTF(playerUuid.toString());

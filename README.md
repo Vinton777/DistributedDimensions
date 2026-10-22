@@ -13,7 +13,7 @@ A Minecraft plugin system that splits a world across **one Paper server per dime
   (dd-paper)  (dd-paper) (dd-paper)
 ```
 
-Crossing a portal transfers player inventory, XP, hunger, and gamemode between servers. Chat stays local to each server.
+Crossing a portal transfers player inventory, XP, hunger, gamemode, and advancement progress between servers. Tamed mobs keep their owner. Chat stays local to each server.
 
 ---
 
