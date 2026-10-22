@@ -2,7 +2,9 @@ package com.edouardcourty.dd.paper.listener;
 
 import com.edouardcourty.dd.common.messaging.Channels;
 import com.edouardcourty.dd.common.model.Dimension;
+import com.edouardcourty.dd.common.model.LocationData;
 import com.edouardcourty.dd.common.model.PortalConstants;
+import com.edouardcourty.dd.common.service.DimensionSwitchService;
 import com.edouardcourty.dd.paper.messaging.EntityTransferSerializer;
 import com.edouardcourty.dd.paper.messaging.EntityTransferCleanup;
 import com.edouardcourty.dd.paper.service.NetherCoordinateScaler;
@@ -17,6 +19,8 @@ import org.bukkit.event.entity.EntityPortalEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.Collection;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -32,6 +36,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class EntityPortalListener implements Listener {
     private final Dimension dimension;
     private final JavaPlugin plugin;
+    private final DimensionSwitchService switchService;
 
     /** UUIDs d'entités récemment spawned via transfer — ignorés pendant 15s pour éviter re-trigger. */
     private static final Map<UUID, Long> RECENTLY_TRANSFERRED = new ConcurrentHashMap<>();
@@ -41,8 +46,9 @@ public class EntityPortalListener implements Listener {
         RECENTLY_TRANSFERRED.put(uuid, System.currentTimeMillis());
     }
 
-    public EntityPortalListener(Dimension dimension, JavaPlugin plugin) {
+    public EntityPortalListener(Dimension dimension, DimensionSwitchService switchService, JavaPlugin plugin) {
         this.dimension = dimension;
+        this.switchService = switchService;
         this.plugin = plugin;
     }
 
@@ -113,6 +119,20 @@ public class EntityPortalListener implements Listener {
     }
 
     private void sendTransfer(Entity entity, Dimension target, double destX, double destY, double destZ) {
+        List<Player> riders = new ArrayList<>();
+        collectRiders(entity, riders);
+        if (!riders.isEmpty()) {
+            if (riders.size() == 1 && riders.getFirst().getVehicle() == entity) {
+                Player rider = riders.getFirst();
+                switchService.sendSwitchRequest(rider.getUniqueId(), target,
+                    LocationData.of(destX, destY, destZ, rider.getLocation().getYaw(), rider.getLocation().getPitch()),
+                    dimension != Dimension.END && target != Dimension.END);
+            } else {
+                plugin.getLogger().warning("[EntityPortal] Cannot transfer a vehicle with multiple or nested players; keeping it on the source server.");
+            }
+            return;
+        }
+
         Collection<? extends Player> online = plugin.getServer().getOnlinePlayers();
         if (online.isEmpty()) {
             plugin.getLogger().warning("[EntityPortal] No player online; transfer deferred.");
@@ -128,5 +148,12 @@ public class EntityPortalListener implements Listener {
 
         // The payload owns these items now; never leave a source boat or passenger behind.
         EntityTransferCleanup.remove(entity);
+    }
+
+    private void collectRiders(Entity entity, List<Player> riders) {
+        for (Entity passenger : entity.getPassengers()) {
+            if (passenger instanceof Player player) riders.add(player);
+            else collectRiders(passenger, riders);
+        }
     }
 }

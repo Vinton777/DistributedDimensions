@@ -11,6 +11,7 @@ public final class EntityTransferCleanup {
     private EntityTransferCleanup() {}
 
     public static void remove(Entity entity) {
+        if (entity instanceof Player) return;
         for (Entity passenger : List.copyOf(entity.getPassengers())) {
             entity.removePassenger(passenger);
             if (!(passenger instanceof Player)) remove(passenger);

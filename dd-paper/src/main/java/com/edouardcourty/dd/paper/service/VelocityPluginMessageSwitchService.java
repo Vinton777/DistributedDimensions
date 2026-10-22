@@ -28,18 +28,19 @@ public class VelocityPluginMessageSwitchService implements DimensionSwitchServic
     public void sendSwitchRequest(UUID playerUuid, Dimension target, LocationData destination, boolean buildPortal) {
         Player player = Bukkit.getPlayer(playerUuid);
         if (player == null) return;
+        if (!pendingVehicleStore.begin(playerUuid)) return;
         org.bukkit.entity.Entity vehicle = player.getVehicle();
 
-        var out = ByteStreams.newDataOutput();
-        PlayerStateSerializer.write(out, playerUuid, target, destination, player, buildPortal);
-        if (vehicle != null) {
-            var vehicleOut = ByteStreams.newDataOutput();
-            EntityTransferSerializer.writeRoot(vehicleOut, vehicle, target, destination.x, destination.y, destination.z);
-            pendingVehicleStore.remember(playerUuid, vehicle.getLocation(),
-                EntityTransferSerializer.readRoot(ByteStreams.newDataInput(vehicleOut.toByteArray())));
-            EntityTransferCleanup.remove(vehicle);
-        }
         try {
+            var out = ByteStreams.newDataOutput();
+            PlayerStateSerializer.write(out, playerUuid, target, destination, player, buildPortal);
+            if (vehicle != null) {
+                var vehicleOut = ByteStreams.newDataOutput();
+                EntityTransferSerializer.writeRoot(vehicleOut, vehicle, target, destination.x, destination.y, destination.z);
+                pendingVehicleStore.remember(playerUuid, vehicle.getLocation(),
+                    EntityTransferSerializer.readRoot(ByteStreams.newDataInput(vehicleOut.toByteArray())));
+                EntityTransferCleanup.remove(vehicle);
+            }
             player.sendPluginMessage(plugin, Channels.DIM_SWITCH.toString(), out.toByteArray());
         } catch (RuntimeException ex) {
             pendingVehicleStore.restore(player);

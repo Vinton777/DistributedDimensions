@@ -46,7 +46,7 @@ public class DistributedDimensions extends JavaPlugin {
 
         getServer().getPluginManager().registerEvents(new NetherPortalListener(dimension, dimensionSwitchService, positionStore), this);
         getServer().getPluginManager().registerEvents(new EndPortalListener(dimension, dimensionSwitchService, positionStore), this);
-        getServer().getPluginManager().registerEvents(new EntityPortalListener(dimension, this), this);
+        getServer().getPluginManager().registerEvents(new EntityPortalListener(dimension, dimensionSwitchService, this), this);
         getServer().getPluginManager().registerEvents(new RespawnListener(dimension, dimensionSwitchService, this), this);
         getServer().getPluginManager().registerEvents(new DimensionGuardListener(this, dimension), this);
     }

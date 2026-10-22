@@ -55,6 +55,8 @@ public final class EntitySpawner {
         entity.setPortalCooldown(PortalConstants.PORTAL_COOLDOWN_TICKS);
 
         for (EntityTransferSerializer.EntityData passengerData : data.passengers()) {
+            // Ignore PLAYER passengers in messages queued by older plugin versions.
+            if (EntityType.PLAYER.name().equals(passengerData.entityType())) continue;
             entity.addPassenger(spawn(world, loc, passengerData));
         }
 
